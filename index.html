@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>사진 업로드</title>
+  <script src="https://unpkg.com/cropperjs"></script>
+  <link rel="stylesheet" href="https://unpkg.com/cropperjs/dist/cropper.min.css" />
+  <style>
+    #preview { max-width: 90vw; }
+    #result { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h2>사진을 업로드해 주세요</h2>
+  <input type="file" accept="image/*" id="inputImage" capture="environment" />
+  <br><canvas id="preview" width="300" height="300"></canvas>
+  <br><button onclick="upload()">Drive에 업로드</button>
+  <p id="result"></p>
+
+  <script>
+    const input = document.getElementById('inputImage');
+    const canvas = document.getElementById('preview');
+    const ctx = canvas.getContext('2d');
+    let cropper, imageDataUrl;
+
+    input.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          // 자동 중앙 정사각형 크롭
+          const side = Math.min(img.width, img.height);
+          const sx = (img.width - side) / 2;
+          const sy = (img.height - side) / 2;
+          canvas.width = canvas.height = 300;
+          ctx.drawImage(img, sx, sy, side, side, 0, 0, 300, 300);
+          imageDataUrl = canvas.toDataURL("image/png");
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function upload() {
+      if (!imageDataUrl) return alert("사진을 먼저 선택하세요.");
+      const form = new FormData();
+      form.append("image", imageDataUrl);
+      fetch("https://script.google.com/macros/s/你的_WEBAPP_URL/exec", {
+        method: "POST",
+        body: form
+      }).then(res => res.text()).then(res => {
+        document.getElementById("result").innerText = res.includes("SUCCESS")
+          ? "✅ 업로드 완료!"
+          : "❌ 업로드 실패: " + res;
+      });
+    }
+  </script>
+</body>
+</html>
